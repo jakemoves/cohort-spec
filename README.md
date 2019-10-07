@@ -1,4 +1,4 @@
-Cohort v3 Specification
+Cohort Specification
 =======================
 
 Introduction
@@ -74,11 +74,46 @@ The mobile version of this component could be revenue-generating without being p
 This is how a user creates a cuelist for use with Cohort. We considered exporting from QLab, since many users know how to use it. But for first release it's probably best to make this web-based, exporting a JSON file.
 
 ### API / Protocol(s)
-This defines how Cohort signals are transmitted over the network from a user to guests. It also defines the format of the cuelist or showbook.
+#### Domain model
+Cohort is organized around Events. A Cohort Event represents a set of reproducible content. If you're in theatre, think of this as a production. 
 
-- earlier versions used server-sent events
-- probably time to move to sockets, so we can have a two-way connection with guest devices
-- investigate mesh networking (so that a Cohort event is not dependent on external wifi or data)
+An Event can have many Occasions (think of these as individual shows in a run). Each Occasion has a location and a start time.
+
+An Event can have many Cues, of varying types. Currently Cohort supports Sound Cues, Video Cues, Text Cues, Light Cues, and Haptic Cues (used to trigger vibration on smartphones).
+
+#### Cues
+When a Cohort server receives a request at a `/broadcast` endpoint accompanied by a Cue, it sends the cue to all the devices connected to the event or occasion represented by that endpoint.
+
+A Cue is a JSON message with the following structure: 
+```
+{
+  "mediaDomain": 0,
+  "cueNumber": 1.5,
+  "cueAction": 0,
+  "targetTags": ["tag1"]
+}
+```
+`mediaDomain` is an enum:
+
+| mediaDomain | int value |
+| ----------- | --------- |
+| sound       | 0         |
+| video       | 1         |
+| text        | 2         |
+| light	      | 3         |
+| haptic      | 4         |
+
+`cueAction` is an enum:
+
+| cueAction      | int value |
+| -------------- | --------- |
+| play (or 'on') | 0         |
+| pause          | 1         |
+| restart        | 2         |
+| stop (or 'off) | 3         |
+
+`targetTags` is used by each client to decide if it should execute the `cueAction`. This provides a convenient way to group or segment participants — a device with a `tag` of 'red' will not play a cue that arrives with `"targetTags": ["blue"]`
+  
 
 ### Server
 This transmits Cohort signals from a user to guests.
